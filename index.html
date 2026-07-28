@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我與ＡＩ一起學 - 互動測驗與證書下載</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700;900&display=swap');
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col items-center justify-center p-4">
+
+  <!-- App Container -->
+  <div class="w-full max-w-2xl bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 my-8">
+    
+    <!-- Header Banner -->
+    <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-6 text-white text-center relative">
+      <div class="text-4xl mb-2">🤖✨</div>
+      <h1 class="text-2xl md:text-3xl font-black tracking-wide">我與 ＡＩ 一起學</h1>
+      <p class="text-indigo-100 text-sm mt-1">小測驗＆榮譽證書頒發</p>
+    </div>
+
+    <div class="p-6 md:p-8">
+
+      <!-- START SCREEN -->
+      <div id="start-screen" class="text-center space-y-6">
+        <div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+          <h2 class="text-xl font-bold text-indigo-900 mb-2">歡迎來到 AI 小達人挑戰！</h2>
+          <p class="text-slate-600 leading-relaxed text-sm md:text-base">
+            本測驗共有 <span class="font-bold text-indigo-600">5 題</span> 選擇題。隨後輸入姓名，就能領取專屬你的「AI 學習小達人」證書喔！
+          </p>
+        </div>
+        <button onclick="startQuiz()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg rounded-2xl shadow-lg hover:shadow-indigo-200 transition duration-200">
+          開始測驗 🚀
+        </button>
+      </div>
+
+      <!-- QUIZ SCREEN -->
+      <div id="quiz-screen" class="hidden space-y-6">
+        <!-- Progress Bar -->
+        <div class="space-y-2">
+          <div class="flex justify-between text-xs font-semibold text-slate-500">
+            <span id="progress-text">題目 1 / 5</span>
+            <span id="score-text">得分：0</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+            <div id="progress-bar" class="bg-indigo-500 h-full w-1/5 transition-all duration-300"></div>
+          </div>
+        </div>
+
+        <!-- Question Card -->
+        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+          <h3 id="question-title" class="text-lg md:text-xl font-bold text-slate-800 leading-snug">
+            題目載入中...
+          </h3>
+        </div>
+
+        <!-- Options Container -->
+        <div id="options-container" class="space-y-3">
+          <!-- Options dynamically rendered -->
+        </div>
+
+        <button id="next-btn" onclick="nextQuestion()" disabled class="w-full py-3.5 bg-slate-300 text-slate-500 font-bold rounded-2xl cursor-not-allowed transition duration-200">
+          下一題 ➡️
+        </button>
+      </div>
+
+      <!-- RESULT & CERTIFICATE SCREEN -->
+      <div id="result-screen" class="hidden space-y-6">
+        <div class="text-center space-y-2">
+          <div class="inline-block p-3 bg-green-100 rounded-full text-green-600 text-3xl mb-1">🎉</div>
+          <h2 class="text-2xl font-black text-slate-800">測驗完成！</h2>
+          <p id="final-score-display" class="text-lg font-bold text-indigo-600">你的得分是 100 分</p>
+        </div>
+
+        <!-- Name Input Form -->
+        <div class="bg-indigo-50/70 p-5 rounded-2xl border border-indigo-100 space-y-3">
+          <label for="student-name" class="block font-bold text-indigo-900 text-sm">
+            ✍️ 請輸入你的姓名（印在證書上）：
+          </label>
+          <div class="flex gap-2">
+            <input type="text" id="student-name" value="王小明" placeholder="例如：張小華" 
+                   class="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-800"
+                   oninput="updateCertificate()">
+          </div>
+        </div>
+
+        <!-- Certificate Preview Area -->
+        <div class="space-y-2">
+          <p class="font-bold text-slate-700 text-sm flex items-center gap-1">
+            <span>📜</span> 證書預覽：
+          </p>
+          <div class="w-full border-2 border-indigo-200 rounded-2xl overflow-hidden shadow-md bg-white">
+            <canvas id="cert-canvas" width="800" height="600" class="w-full h-auto block"></canvas>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button onclick="downloadCertificate()" class="flex-1 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-2xl shadow-lg transition duration-200 flex items-center justify-center gap-2">
+            <span>📥</span> 下載榮譽證書 (PNG)
+          </button>
+          <button onclick="restartQuiz()" class="py-3.5 px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition duration-200">
+            重新測驗 🔄
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Quiz Data
+    const questions = [
+      {
+        question: "1. 人工智慧 (AI) 到底是什麼？",
+        options: [
+          "(A) 一種會讀心術的魔法",
+          "(B) 利用電腦模擬人類智慧行為的聰明機器",
+          "(C) 住在電腦裡的外星人",
+          "(D) 只是會說話的鬧鐘"
+        ],
+        answer: 1
+      },
+      {
+        question: "2. 哪一種 AI 像「寫作家或畫家」，能夠創作出詩、圖畫或作曲？",
+        options: [
+          "(A) 辨別型 AI",
+          "(B) 建議型 AI",
+          "(C) 創作型 (生成式) AI",
+          "(D) 掃地機器人"
+        ],
+        answer: 2
+      },
+      {
+        question: "3. 在生活中，哪一個例子「不屬於」AI 的應用？",
+        options: [
+          "(A) YouTube 推薦你可能喜歡的昆蟲影片",
+          "(B) 校門口的機器人認出你是誰並打招呼",
+          "(C) 智慧音箱叫你起床並跟你說話",
+          "(D) 用彩色鉛筆在紙上畫圖"
+        ],
+        answer: 3
+      },
+      {
+        question: "4. AI 是靠什麼變得越來越聰明的？",
+        options: [
+          "(A) 靠自己每天運動",
+          "(B) 依靠人類提供的大量資料來學習",
+          "(C) 靠喝果汁補充能量",
+          "(D) 它天生就什麼都懂"
+        ],
+        answer: 1
+      },
+      {
+        question: "5. 手冊中提到的「e度」是哪一個平台的 AI 學習夥伴？",
+        options: [
+          "(A) 教育部因材網",
+          "(B) 遊戲大廳",
+          "(C) 社交媒體",
+          "(D) 購物中心"
+        ],
+        answer: 0
+      }
+    ];
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let selectedOptionIndex = null;
+
+    function startQuiz() {
+      document.getElementById('start-screen').classList.add('hidden');
+      document.getElementById('quiz-screen').classList.remove('hidden');
+      currentQuestionIndex = 0;
+      score = 0;
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      selectedOptionIndex = null;
+      const q = questions[currentQuestionIndex];
+      
+      // Update Progress
+      document.getElementById('progress-text').innerText = `題目 ${currentQuestionIndex + 1} / ${questions.length}`;
+      document.getElementById('score-text').innerText = `得分：${score}`;
+      document.getElementById('progress-bar').style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+
+      // Set Question Title
+      document.getElementById('question-title').innerText = q.question;
+
+      // Render Options
+      const optionsContainer = document.getElementById('options-container');
+      optionsContainer.innerHTML = '';
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left p-4 rounded-xl border-2 border-slate-200 hover:border-indigo-400 bg-white hover:bg-indigo-50/50 font-medium text-slate-700 transition duration-150 flex items-center justify-between group`;
+        btn.onclick = () => selectOption(idx, btn);
+        btn.innerHTML = `
+          <span>${opt}</span>
+          <span class="w-6 h-6 rounded-full border-2 border-slate-300 group-hover:border-indigo-500 flex items-center justify-center text-xs text-transparent font-bold option-check">✓</span>
+        `;
+        optionsContainer.appendChild(btn);
+      });
+
+      // Reset Next Button
+      const nextBtn = document.getElementById('next-btn');
+      nextBtn.disabled = true;
+      nextBtn.className = "w-full py-3.5 bg-slate-200 text-slate-400 font-bold rounded-2xl cursor-not-allowed transition duration-200";
+      nextBtn.innerText = currentQuestionIndex === questions.length - 1 ? "完成測驗 🎓" : "下一題 ➡️";
+    }
+
+    function selectOption(index, element) {
+      selectedOptionIndex = index;
+      
+      // Clear previous selections
+      const container = document.getElementById('options-container');
+      Array.from(container.children).forEach((child, i) => {
+        child.className = "w-full text-left p-4 rounded-xl border-2 border-slate-200 hover:border-indigo-400 bg-white font-medium text-slate-700 transition duration-150 flex items-center justify-between group";
+        const check = child.querySelector('.option-check');
+        check.className = "w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-transparent font-bold option-check";
+      });
+
+      // Highlight selected
+      element.className = "w-full text-left p-4 rounded-xl border-2 border-indigo-600 bg-indigo-50 font-bold text-indigo-900 transition duration-150 flex items-center justify-between";
+      const check = element.querySelector('.option-check');
+      check.className = "w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold option-check";
+
+      // Enable next button
+      const nextBtn = document.getElementById('next-btn');
+      nextBtn.disabled = false;
+      nextBtn.className = "w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-indigo-200 cursor-pointer transition duration-200";
+    }
+
+    function nextQuestion() {
+      if (selectedOptionIndex === null) return;
+
+      // Check answer
+      if (selectedOptionIndex === questions[currentQuestionIndex].answer) {
+        score += 20;
+      }
+
+      currentQuestionIndex++;
+
+      if (currentQuestionIndex < questions.length) {
+        loadQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      document.getElementById('quiz-screen').classList.add('hidden');
+      document.getElementById('result-screen').classList.remove('hidden');
+
+      document.getElementById('final-score-display').innerText = `你的得分是 ${score} 分！`;
+
+      // Trigger Confetti if high score
+      if (score >= 80 && typeof confetti === 'function') {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+
+      updateCertificate();
+    }
+
+    function restartQuiz() {
+      document.getElementById('result-screen').classList.add('hidden');
+      startQuiz();
+    }
+
+    // Certificate Canvas Drawing Logic
+    function updateCertificate() {
+      const canvas = document.getElementById('cert-canvas');
+      const ctx = canvas.getContext('2d');
+      const name = document.getElementById('student-name').value.trim() || "學習者";
+
+      // Background Gradient
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Outer Decorative Border
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 12;
+      ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+      // Inner Fine Border
+      ctx.strokeStyle = '#a5b4fc';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(32, 32, canvas.width - 64, canvas.height - 64);
+
+      // Corner Decorative Accents
+      drawCornerAccents(ctx, canvas.width, canvas.height);
+
+      // Certificate Title Header
+      ctx.textAlign = 'center';
+      
+      // Top Subtitle
+      ctx.fillStyle = '#4f46e5';
+      ctx.font = 'bold 22px "Noto Sans TC", sans-serif';
+      ctx.fillText('《 我 與 Ａ Ｉ 一 起 學 》', canvas.width / 2, 95);
+
+      // Main Title
+      ctx.fillStyle = '#1e1b4b';
+      ctx.font = '900 42px "Noto Sans TC", sans-serif';
+      ctx.fillText('榮 譽 證 書', canvas.width / 2, 155);
+
+      // Decorative Line
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2 - 120, 175);
+      ctx.lineTo(canvas.width / 2 + 120, 175);
+      ctx.strokeStyle = '#ec4899';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Recipient Name
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 36px "Noto Sans TC", sans-serif';
+      ctx.fillText(`恭喜  ${name}  同學`, canvas.width / 2, 255);
+
+      // Body Text
+      ctx.fillStyle = '#334155';
+      ctx.font = '22px "Noto Sans TC", sans-serif';
+      ctx.fillText('熱情參與並順利完成人工智慧基礎知識測驗，', canvas.width / 2, 320);
+      ctx.fillText(`表現優異，獲得總分 ${score} 分！`, canvas.width / 2, 360);
+
+      // Badge Graphic (Center-Bottom)
+      drawBadge(ctx, canvas.width / 2 - 160, 420);
+
+      // Date & Organization Stamp
+      const today = new Date();
+      const dateStr = `${today.getFullYear()} 年 ${today.getMonth() + 1} 月 ${today.getDate()} 日`;
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 18px "Noto Sans TC", sans-serif';
+      ctx.fillText(`頒發日期：${dateStr}`, canvas.width - 60, 480);
+      ctx.fillText('認證單位：AI 學習探索小組', canvas.width - 60, 515);
+
+      // Stamp Mark
+      drawStamp(ctx, canvas.width - 130, 430);
+    }
+
+    function drawCornerAccents(ctx, width, height) {
+      const size = 30;
+      ctx.fillStyle = '#818cf8';
+      // Top-Left
+      ctx.fillRect(20, 20, size, size);
+      // Top-Right
+      ctx.fillRect(width - 20 - size, 20, size, size);
+      // Bottom-Left
+      ctx.fillRect(20, height - 20 - size, size, size);
+      // Bottom-Right
+      ctx.fillRect(width - 20 - size, height - 20 - size, size, size);
+    }
+
+    function drawBadge(ctx, x, y) {
+      ctx.save();
+      // Medal Ribbon
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.moveTo(x + 20, y + 30);
+      ctx.lineTo(x + 5, y + 80);
+      ctx.lineTo(x + 25, y + 70);
+      ctx.lineTo(x + 40, y + 80);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath();
+      ctx.moveTo(x + 40, y + 30);
+      ctx.lineTo(x + 25, y + 80);
+      ctx.lineTo(x + 40, y + 70);
+      ctx.lineTo(x + 60, y + 80);
+      ctx.closePath();
+      ctx.fill();
+
+      // Golden Circle
+      ctx.beginPath();
+      ctx.arc(x + 30, y + 30, 32, 0, Math.PI * 2);
+      ctx.fillStyle = '#f59e0b';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(x + 30, y + 30, 26, 0, Math.PI * 2);
+      ctx.fillStyle = '#fbbf24';
+      ctx.fill();
+
+      // Star Text
+      ctx.fillStyle = '#78350f';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('★', x + 30, y + 38);
+      ctx.restore();
+    }
+
+    function drawStamp(ctx, x, y) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-0.15);
+
+      ctx.strokeStyle = '#dc2626';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(0, 0, 110, 50);
+
+      ctx.strokeStyle = '#dc2626';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(4, 4, 102, 42);
+
+      ctx.fillStyle = '#dc2626';
+      ctx.font = 'bold 15px "Noto Sans TC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('審核通過', 55, 26);
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText('VERIFIED', 55, 40);
+
+      ctx.restore();
+    }
+
+    function downloadCertificate() {
+      const canvas = document.getElementById('cert-canvas');
+      const name = document.getElementById('student-name').value.trim() || "學習者";
+      
+      const link = document.createElement('a');
+      link.download = `${name}_AI學習榮譽證書.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+  </script>
+</body>
+</html>
